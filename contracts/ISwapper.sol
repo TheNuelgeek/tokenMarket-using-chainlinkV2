@@ -1,44 +1,53 @@
-// //SPDX-License-Identifier: Unlicense
-// pragma solidity ^0.8.4;
+//SPDX-License-Identifier: Unlicense
+pragma solidity ^0.8.4;
 
-// import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./price.sol";
 
-// contract Swap{
+interface IERC20{
+    function transferFrom(address _from,address _to,uint256 _amount) external returns(bool);
+    function transfer(address _to,uint256 _amount) external returns(bool);
+}
 
-//     address private constant UNISWAP_V2_ROUTER =
-//         0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-//     address private constant UNISWAP_V2_FACTORY = 
-//         0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
-//     address private constant WETH = 
-//         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+contract Market{
 
-//     function swap(
-//         address _tokenIn,
-//         address _tokenOut,
-//         uint _amountIn,
-//         uint _amountOutMin,
-//         address _to
-//     ) external {
-//         IERC20(_tokenIn).transferFrom(msg.sender, address(this), _amountIn);
-//         IERC20(_tokenIn).approve(UNISWAP_V2_ROUTER, _amountIn);
-//             address[] memory path;
-//         if (_tokenIn == WETH || _tokenOut == WETH) {
-//             path = new address[](2);
-//             path[0] = _tokenIn;
-//             path[1] = _tokenOut;
-//         } else {
-//             path = new address[](3);
-//             path[0] = _tokenIn;
-//             path[1] = WETH;
-//             path[2] = _tokenOut;
-//         }
+    struct Order{
+        address fromToken; // Contract address usdt
+        uint88 expiry;
+        bool done;
+        address toToken; // Router
+        uint256 toTokenAmount;
+        uint256 fromTokenAmount;
+        uint256 amountAvailable;
+        address owner; // Nuelgeek Usdt
+    }
 
-//         IUniswapV2Router(UNISWAP_V2_ROUTER).swapExactTokensForTokens(
-//             _amountIn,
-//             _amountOutMin,
-//             path,
-//             _to,
-//             block.timestamp
-//         );
-//     }
-// }
+    uint orderIndex=1;
+
+    mapping(uint=>Order) public orders;
+
+    function addOrder(address _fromToken,address _toToken,uint _amountIn,uint _amountOut,uint _secs) external{
+        require(IERC20(_fromToken).transferFrom(msg.sender,address(this),_amountIn),"OGBENI!!!!!");
+        Order storage o=orders[orderIndex];
+        PriceConsumerV3 p;
+        o.fromToken = _fromToken;
+        o.toToken = _toToken;
+        o.toTokenAmount = _amountOut;
+        o.fromTokenAmount= _amountIn;
+        o.expiry=uint88(block.timestamp+_secs);
+        o.amountAvailable=_amountIn;
+        o.owner=msg.sender;
+        orderIndex++;
+
+        assert(!o.done);
+        assert(o.toToken!=address(0));
+        assert(o.expiry>=block.timestamp);
+        (,uint debt)=p.getLatestPriceEthUsd();
+        assert(o.amountAvailable*1e8>=debt);
+        require(IERC20(o.toToken).transferFrom(msg.sender,o.owner,_amountIn));
+        require(IERC20(o.fromToken).transfer(msg.sender,debt/1e8));
+        // o.amountAvailable -= debt;
+        o.amountAvailable -= debt/1e8;
+        o.done=o.amountAvailable==0?true:false;
+    }
+ 
+}
