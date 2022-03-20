@@ -9,8 +9,9 @@ interface IERC20{
     function transferFrom(address _from,address _to,uint256 _amount) external returns(bool);
     function transfer(address _to,uint256 _amount) external returns(bool);
     function approve(address spender, uint256 amount) external returns (bool);
+    // function balanceOf(address addr)external returns(uint);
+    function balanceOf(address account) external view returns (uint256);
 }
-
 contract Market{
 
     AggregatorV3Interface internal priceFeed;

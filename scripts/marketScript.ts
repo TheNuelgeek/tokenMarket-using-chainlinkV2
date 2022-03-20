@@ -27,22 +27,24 @@ async function market(){
         method: "hardhat_impersonateAccount",
          params: [linkHolder],
      });
-    const sign = await linkContract.approve(swapperContract.address,"1000000")
+
     const signer: Signer = await ethers.getSigner(linkHolder)
-    // await linkContract.connect(signer).approve(swapperContract.address, "100000")
+    await linkContract.connect(signer).approve(swapperContract.address, "100000")
 
     // const getsigner = await ethers.getSigners()
     // const sender = await getsigner[0].address;
     // const msg = await ethers.getSigner(sender)
 
-    // const status = await linkContract.connect(signer).transfer(swapperContract.address, "100000")
-    // console.log(status)
+    const status = await linkContract.connect(signer).transfer(swapperContract.address, "100000")
+    console.log(status)
 
-    const setOrder = await swapperContract.connect(signer).addOrder(linkToken,usdToken,1,8)
+    const setOrder = await swapperContract.connect(signer).addOrder(linkToken,usdToken,100,8)
     
     
+    const token2 = await usdContract.balanceOf(linkHolder) 
+    console.log(`Usdt Bal:${token2}`)
+   //console.log(`Allowing contract to spend ${setOrder}` );
 
-    console.log(`Allowing contract to spend ${setOrder}` );
     
     
 
@@ -53,16 +55,18 @@ async function market(){
     await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
          params: [usdHolder],
-     });
+    });
 
-    let  Signer2 = await ethers.getSigner(usdHolder)
-    await usdContract.connect(Signer2).approve(linkHolder, "1")
+    const  Signer2 = await ethers.getSigner(usdHolder)
+    await usdContract.connect(Signer2).approve(swapperContract.address, "100000")
 
-    await swapperContract.connect(Signer2).swapEthUsd(1,"1")
-
+    await swapperContract.connect(Signer2).swapEthUsd(1,"100")
+     //console.log(`Latest bal:${}`)
     // const NewBal = await ethers.provider.getBalance(linkHolder)
     // console.log(NewBal);
-
+    console.log(await ethers.provider.getBalance(swapperContract.address))
+    const token = await usdContract.balanceOf(linkHolder)
+    console.log(`Latest Usdt Bal: ${token}`,)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
