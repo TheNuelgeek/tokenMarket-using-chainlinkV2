@@ -50,11 +50,11 @@ contract Market{
         return price;
     }
 
-    function addOrder(address _fromToken,address _toToken,uint _amountIn, int _decimal) external{
+    function addOrder(address _fromToken,address _toToken,uint _amountIn) external{
         require(IERC20(_fromToken).transferFrom(msg.sender,address(this),_amountIn),"Not accessible");
         Order storage o=orders[orderIndex];
         int _price = getLatestPriceEthUsd();
-        int _rate = _price / _decimal;
+        int _rate = _price;
         rate = _rate;
         o.fromToken = _fromToken;
         o.toToken = _toToken;
@@ -68,13 +68,13 @@ contract Market{
         assert(o.toToken!=address(0));
     }
 
-    function swapEthUsd(uint _index, uint _amountIn) external payable{
+    function swapEthUsd(uint _index) external payable{
         Order storage o=orders[_index];
         require(!o.done, "oder has been executed");
         assert(o.toToken != address(0));
-        uint calcRate = _amountIn /uint(rate);
-        require(IERC20(o.toToken).transferFrom(msg.sender, o.owner, _amountIn),"Money not sent");
-        require(IERC20(o.fromToken).transfer(msg.sender, calcRate), "Money not recived");
+        uint calcRate = ((o.amountAvailable) * uint(rate));
+        require(IERC20(o.toToken).transferFrom(msg.sender, o.owner, calcRate/10**8),"Money not sent");
+        require(IERC20(o.fromToken).transfer(msg.sender, o.amountAvailable), "Money not recived");
 
         o.amountAvailable -= calcRate;
         o.done=o.amountAvailable==0?true:false;
