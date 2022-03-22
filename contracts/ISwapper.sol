@@ -39,7 +39,7 @@ contract Market{
         //priceFeed2 = AggregatorV3Interface(0x0bF499444525a23E7Bb61997539725cA2e928138);
     }
 
-    function getLatestPriceEthUsd() public view returns (int) {
+    function getLatestPriceLinkUsdc() public view returns (int) {
         (
             /*uint80 roundID*/,
             int price,
@@ -53,7 +53,7 @@ contract Market{
     function addOrder(address _fromToken,address _toToken,uint _amountIn) external{
         require(IERC20(_fromToken).transferFrom(msg.sender,address(this),_amountIn),"Not accessible");
         Order storage o=orders[orderIndex];
-        int _price = getLatestPriceEthUsd();
+        int _price = getLatestPriceLinkUsdc();
         int _rate = _price;
         rate = _rate;
         o.fromToken = _fromToken;
@@ -64,19 +64,18 @@ contract Market{
         o.owner=msg.sender;
         orderIndex++;
 
-        // assert(!o.done);
         assert(o.toToken!=address(0));
     }
 
-    function swapEthUsd(uint _index) external payable{
+    function swapLinkUsdc(uint _index) external payable{
         Order storage o=orders[_index];
         require(!o.done, "oder has been executed");
         assert(o.toToken != address(0));
         uint calcRate = ((o.amountAvailable) * uint(rate));
-        require(IERC20(o.toToken).transferFrom(msg.sender, o.owner, calcRate/10**8),"Money not sent");
-        require(IERC20(o.fromToken).transfer(msg.sender, o.amountAvailable), "Money not recived");
+        require(IERC20(o.toToken).transferFrom(msg.sender, o.owner, calcRate/10**8)," Money not received");
+        require(IERC20(o.fromToken).transfer(msg.sender, o.amountAvailable), "Money not sent");
 
-        o.amountAvailable -= calcRate;
+        // o.amountAvailable -= calcRate;
         o.done=o.amountAvailable==0?true:false;
     }
  
