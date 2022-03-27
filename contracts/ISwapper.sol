@@ -9,21 +9,19 @@ interface IERC20{
     function transferFrom(address _from,address _to,uint256 _amount) external returns(bool);
     function transfer(address _to,uint256 _amount) external returns(bool);
     function approve(address spender, uint256 amount) external returns (bool);
-    // function balanceOf(address addr)external returns(uint);
     function balanceOf(address account) external view returns (uint256);
 }
 contract Market{
 
     AggregatorV3Interface internal priceFeed;
     struct Order{
-        address fromToken; // Contract address usdt
-        //uint88 expiry;
+        address fromToken;
         bool done;
-        address toToken; // Router
+        address toToken;
         uint256 toTokenAmount;
         uint256 fromTokenAmount;
         uint256 amountAvailable;
-        address owner; // Nuelgeek Usdt
+        address owner;
     }
 
     uint orderIndex = 1;
@@ -36,7 +34,6 @@ contract Market{
 
     constructor() {
         priceFeed = AggregatorV3Interface(0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c);
-        //priceFeed2 = AggregatorV3Interface(0x0bF499444525a23E7Bb61997539725cA2e928138);
     }
 
     function getLatestPriceLinkUsdc() public view returns (int) {
@@ -54,16 +51,13 @@ contract Market{
         require(IERC20(_fromToken).transferFrom(msg.sender,address(this),_amountIn),"Not accessible");
         Order storage o=orders[orderIndex];
         int _price = getLatestPriceLinkUsdc();
-        int _rate = _price;
-        rate = _rate;
+        rate = _price;
         o.fromToken = _fromToken;
         o.toToken = _toToken;
-        o.toTokenAmount = uint(rate);
         o.fromTokenAmount= _amountIn;
         o.amountAvailable=_amountIn;
         o.owner=msg.sender;
         orderIndex++;
-
         assert(o.toToken!=address(0));
     }
 
@@ -74,8 +68,6 @@ contract Market{
         uint calcRate = ((o.amountAvailable) * uint(rate));
         require(IERC20(o.toToken).transferFrom(msg.sender, o.owner, calcRate/10**8)," Money not received");
         require(IERC20(o.fromToken).transfer(msg.sender, o.amountAvailable), "Money not sent");
-
-        // o.amountAvailable -= calcRate;
         o.done=o.amountAvailable==0?true:false;
     }
  
